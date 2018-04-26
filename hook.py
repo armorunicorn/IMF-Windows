@@ -18,7 +18,7 @@ class ApiHook(basic.Api):
     def list_args(self, show_type):
         ret = ''
         for x in self.arghooks:
-            if show_type :
+            if show_type:
                 ret += '%s %s,'%(x.get('type'), x.get('name'))
             else:
                 ret += '%s,'%x.get('name')
@@ -33,12 +33,8 @@ class ApiHook(basic.Api):
         return '%s fake_%s(%s){\n%s}\n'%(self.rtype, self.name, args, body)
 
     def log_intro(self):
-        intro = '\tFILE *fp = fopen(log_path,"a");\n'
-        intro += '\tHANDLE fh = (HANDLE)_fileno(fp);\n'
-        intro += '\tOVERLAPPED overlapped;\n'
-        intro += '\tmemset(&overlapped, 0, sizeof(overlapped));\n'
-        intro += '\tconst int lockSize = 10000;\n'
-        intro += '\tLockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, lockSize, 0, &overlapped);\n'
+        intro = '\tWaitForSingleObject(g_mutex, INFINITE);\n'
+        intro += '\tFILE *fp = fopen(log_path,"a");\n'
         intro += '\t_wsetlocale(0, L"chs");\n'
         return intro
 
@@ -47,14 +43,14 @@ class ApiHook(basic.Api):
         for arghook in self.arghooks:
             if arghook.is_input():
                 ret += arghook.log()
-        ret = '''\tfprintf(fp,"IN ['%s',");\n''' % (self.name) + ret
+        ret = '''\tfprintf(fp,"IN ['%s',");\n''' % self.name + ret
         return ret + '''\tfprintf(fp,"]\\n");\n'''
 
     def call_ori(self):
         args = self.list_args(False)
-        if self.is_void() :
-            return  '\t%s(%s);\n'%(self.name, args)
-        return '\t%s ret = %s(%s);\n'%(self.rtype,self.name, args)
+        if self.is_void():
+            return  '\tp%s(%s);\n' % (self.name, args)
+        return '\t%s ret = p%s(%s);\n' % (self.rtype,self.name, args)
 
     def log_output(self):
         ret = ArgHook(self.rval).log()
@@ -64,9 +60,8 @@ class ApiHook(basic.Api):
         ret = '''\tfprintf(fp,"OUT ['%s',");\n'''%(self.name) +ret
         ret += '''\tfprintf(fp,"]\\n");\n'''
 
-        ret += '\tmemset(&overlapped, 0, sizeof(overlapped));\n'
-        ret += '\tUnlockFileEx(fh, 0, lockSize, 0, &overlapped);\n'
         ret += '\tfclose(fp);\n'
+        ret += '\tReleaseMutex(g_mutex);\n'
         if not self.is_void():
             ret += '\treturn ret;\n'
         return ret
@@ -145,7 +140,16 @@ class ArgHook(basic.Arg):
 
         ret += '\tif(%s)\n' % (self.valid_ptr())
         ret += '''\t{\n\t\tfprintf(fp,"{'name':'%s',");\n''' % self.name
-        ret += '''\t\tfwprintf(fp, L"'value': %s,", %s);\n''' % (fmt, log_name)
+        ret += '''\t\t__try\n'''
+        ret += '''\t\t{\n'''
+        ret += '''\t\t\tWCHAR tmp[100] = { 0 };\n'''
+        ret += '''\t\t\tswprintf_s(tmp, L"'value': %s,", %s);\n''' % (fmt, log_name)
+        ret += '''\t\t\tfwprintf(fp, L"%s", tmp);\n'''
+        ret += '''\t\t}\n'''
+        ret += '''\t\t__except(1)\n'''
+        ret += '''\t\t{\n'''
+        ret += '''\t\t\tfprintf(fp, "'value': %s,", %s);\n\n''' % (fmt, log_name)
+        ret += '''\t\t}\n'''
         ret += '''\t\tfprintf(fp, "'size' : 0x%%lx,'cnt':0x%%x,%s ''' % add
         ret += ''''data':[", sizeof(%s),''' % self.type
         ret += '''%s%s);\n ''' % (self.get_opt('cnt'), add_arg)
@@ -236,8 +240,8 @@ class Hooker:
             if name == "wvsprintfW":
                 a = 3
             h = ApiHook(api)
-            code += h.log()
             code += ori_proc % h.hook_orifun()
+            code += h.log()
             code += "\n"
             attach_table += attach % h.hook_entry()
             detach_table += detach % h.hook_entry()

@@ -232,14 +232,32 @@ Copyright (c) 2017 HyungSeok Han and Sang Kil Cha at SoftSec, KAIST
 See the file LICENCE for copying permission.
 */
 
-#include "DetourInjectTools.h"  
 #include "detours.h" 
+#include <stdio.h>
+#include <locale.h>
+#include <Windows.h>
+#include <excpt.h>
+
+#pragma comment(lib, "detours.lib")
+#ifndef LOG_PATH
+#define LOG_PATH "C:\\\\log.txt"
+#endif
+
+__declspec(dllexport) VOID ExportFuncForSetDll(VOID)
+{
+	OutputDebugStringA("ExportFuncForSetDll");
+}
+
+HANDLE g_mutex;
+const char* log_path = LOG_PATH;
 '''
 
 HOOK_MAIN_TEMPLATE = '''
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved)  
 {  
-    if (dwReason == DLL_PROCESS_ATTACH) {  
+    if (dwReason == DLL_PROCESS_ATTACH)
+    {
+        g_mutex = CreateMutex(NULL, false, NULL);
         DetourTransactionBegin();  
         DetourUpdateThread(GetCurrentThread());  
 %s 
@@ -482,7 +500,7 @@ API_DEFS = [
 [('BOOL', 'UnloadKeyboardLayout'), [('HKL', 'hkl', {})]],
 [('BOOL', 'GetKeyboardLayoutNameA'), [('LPSTR', 'pwszKLID', {'IO': 'O', 'cnt': 'KL_NAMELENGTH'})]],
 [('BOOL', 'GetKeyboardLayoutNameW'), [('LPWSTR', 'pwszKLID', {'IO': 'O', 'cnt': 'KL_NAMELENGTH'})]],
-[('int', 'GetKeyboardLayoutList'), [('int', 'nBuff', {}), ('HKL*', 'lpList', {'IO': 'O', 'cnt': 'nBuff, return'})]],
+[('int', 'GetKeyboardLayoutList'), [('int', 'nBuff', {}), ('HKL*', 'lpList', {'IO': 'O', 'cnt': 'nBuff, ret'})]],
 [('HKL', 'GetKeyboardLayout'), [('DWORD', 'idThread', {})]],
 [('int', 'GetMouseMovePointsEx'), [('UINT', 'cbSize', {}), ('LPMOUSEMOVEPOINT', 'lppt', {}), ('LPMOUSEMOVEPOINT', 'lpptBuf', {'IO': 'O', 'cnt': 'nBufPoints'}), ('int', 'nBufPoints', {}), ('DWORD', 'resolution', {})]],
 [('HDESK', 'CreateDesktopA'), [('LPCSTR', 'lpszDesktop', {}), ('LPCSTR', 'lpszDevice', {}), ('DEVMODEA*', ' pDevmode', {}), ('DWORD', 'dwFlags', {}), ('ACCESS_MASK', 'dwDesiredAccess', {}), ('LPSECURITY_ATTRIBUTES', 'lpsa', {})]],
@@ -750,8 +768,8 @@ API_DEFS = [
 [('HACCEL', 'CreateAcceleratorTableA'), [('LPACCEL', 'paccel', {'cnt': 'cAccel'}), ('int', 'cAccel', {})]],
 [('HACCEL', 'CreateAcceleratorTableW'), [('LPACCEL', 'paccel', {'cnt': 'cAccel'}), ('int', 'cAccel', {})]],
 [('BOOL', 'DestroyAcceleratorTable'), [('HACCEL', 'hAccel', {})]],
-[('int', 'CopyAcceleratorTableA'), [('HACCEL', 'hAccelSrc', {}), ('LPACCEL', 'lpAccelDst', {'IO': 'O', 'cnt': 'cAccelEntries, return'}), ('int', 'cAccelEntries', {})]],
-[('int', 'CopyAcceleratorTableW'), [('HACCEL', 'hAccelSrc', {}), ('LPACCEL', 'lpAccelDst', {'IO': 'O', 'cnt': 'cAccelEntries, return'}), ('int', 'cAccelEntries', {})]],
+[('int', 'CopyAcceleratorTableA'), [('HACCEL', 'hAccelSrc', {}), ('LPACCEL', 'lpAccelDst', {'IO': 'O', 'cnt': 'cAccelEntries, ret'}), ('int', 'cAccelEntries', {})]],
+[('int', 'CopyAcceleratorTableW'), [('HACCEL', 'hAccelSrc', {}), ('LPACCEL', 'lpAccelDst', {'IO': 'O', 'cnt': 'cAccelEntries, ret'}), ('int', 'cAccelEntries', {})]],
 [('int', 'TranslateAcceleratorA'), [('HWND', 'hWnd', {}), ('HACCEL', 'hAccTable', {}), ('LPMSG', 'lpMsg', {})]],
 [('int', 'TranslateAcceleratorW'), [('HWND', 'hWnd', {}), ('HACCEL', 'hAccTable', {}), ('LPMSG', 'lpMsg', {})]],
 [('int', 'GetSystemMetrics'), [('int', 'nIndex', {})]],
@@ -964,8 +982,8 @@ API_DEFS = [
 [('BOOL', 'DeregisterShellHookWindow'), [('HWND', 'hwnd', {})]],
 [('BOOL', 'EnumWindows'), [('WNDENUMPROC', 'lpEnumFunc', {}), ('LPARAM', 'lParam', {})]],
 [('BOOL', 'EnumThreadWindows'), [('DWORD', 'dwThreadId', {}), ('WNDENUMPROC', 'lpfn', {}), ('LPARAM', 'lParam', {})]],
-[('int', 'GetClassNameA'), [('HWND', 'hWnd', {}), ('LPSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, return'})]],
-[('int', 'GetClassNameW'), [('HWND', 'hWnd', {}), ('LPWSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, return'})]],
+[('int', 'GetClassNameA'), [('HWND', 'hWnd', {}), ('LPSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'})]],
+[('int', 'GetClassNameW'), [('HWND', 'hWnd', {}), ('LPWSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'})]],
 [('HWND', 'GetTopWindow'), [('HWND', 'hWnd', {})]],
 [('DWORD', 'GetWindowThreadProcessId'), [('HWND', 'hWnd', {}), ('LPDWORD', 'lpdwProcessId', {'IO': 'O'})]],
 [('BOOL', 'IsGUIThread'), [('BOOL', 'bConvert', {})]],
@@ -993,8 +1011,8 @@ API_DEFS = [
 [('BOOL', 'SetSystemCursor'), [('HCURSOR', 'hcur', {}), ('DWORD', 'id', {})]],
 [('HICON', 'LoadIconA'), [('HINSTANCE', 'hInstance', {}), ('LPCSTR', 'lpIconName', {})]],
 [('HICON', 'LoadIconW'), [('HINSTANCE', 'hInstance', {}), ('LPCWSTR', 'lpIconName', {})]],
-[('UINT', 'PrivateExtractIconsA'), [('LPCSTR', 'szFileName', {}), ('int', 'nIconIndex', {}), ('int', 'cxIcon', {}), ('int', 'cyIcon', {}), ('HICON*', 'phicon', {'IO': 'O', 'cnt': 'nIcons, return'}), ('UINT*', 'piconid', {'IO': 'O', 'cnt': 'nIcons, return'}), ('UINT', 'nIcons', {}), ('UINT', 'flags', {})]],
-[('UINT', 'PrivateExtractIconsW'), [('LPCWSTR', 'szFileName', {}), ('int', 'nIconIndex', {}), ('int', 'cxIcon', {}), ('int', 'cyIcon', {}), ('HICON*', 'phicon', {'IO': 'O', 'cnt': 'nIcons, return'}), ('UINT*', 'piconid', {'IO': 'O', 'cnt': 'nIcons, return'}), ('UINT', 'nIcons', {}), ('UINT', 'flags', {})]],
+[('UINT', 'PrivateExtractIconsA'), [('LPCSTR', 'szFileName', {}), ('int', 'nIconIndex', {}), ('int', 'cxIcon', {}), ('int', 'cyIcon', {}), ('HICON*', 'phicon', {'IO': 'O', 'cnt': 'nIcons, ret'}), ('UINT*', 'piconid', {'IO': 'O', 'cnt': 'nIcons, ret'}), ('UINT', 'nIcons', {}), ('UINT', 'flags', {})]],
+[('UINT', 'PrivateExtractIconsW'), [('LPCWSTR', 'szFileName', {}), ('int', 'nIconIndex', {}), ('int', 'cxIcon', {}), ('int', 'cyIcon', {}), ('HICON*', 'phicon', {'IO': 'O', 'cnt': 'nIcons, ret'}), ('UINT*', 'piconid', {'IO': 'O', 'cnt': 'nIcons, ret'}), ('UINT', 'nIcons', {}), ('UINT', 'flags', {})]],
 [('HICON', 'CreateIcon'), [('HINSTANCE', 'hInstance', {}), ('int', 'nWidth', {}), ('int', 'nHeight', {}), ('BYTE', 'cPlanes', {}), ('BYTE', 'cBitsPixel', {}), ('CONST BYTE*', 'lpbANDbits', {}), ('CONST BYTE*', 'lpbXORbits', {})]],
 [('BOOL', 'DestroyIcon'), [('HICON', 'hIcon', {})]],
 [('int', 'LookupIconIdFromDirectory'), [('PBYTE', 'presbits', {}), ('BOOL', 'fIcon', {})]],
@@ -1009,8 +1027,8 @@ API_DEFS = [
 [('BOOL', 'GetIconInfo'), [('HICON', 'hIcon', {}), ('PICONINFO', 'piconinfo', {'IO': 'O'})]],
 [('BOOL', 'GetIconInfoExA'), [('HICON', 'hicon', {}), ('PICONINFOEXA', 'piconinfo', {'IO': 'IO'})]],
 [('BOOL', 'GetIconInfoExW'), [('HICON', 'hicon', {}), ('PICONINFOEXW', 'piconinfo', {'IO': 'IO'})]],
-[('int', 'LoadStringA'), [('HINSTANCE', 'hInstance', {}), ('UINT', 'uID', {}), ('LPSTR', 'lpBuffer', {'IO': 'O', 'cnt': 'cchBufferMax, return + 1'}), ('int', 'cchBufferMax', {})]],
-[('int', 'LoadStringW'), [('HINSTANCE', 'hInstance', {}), ('UINT', 'uID', {}), ('LPWSTR', 'lpBuffer', {'IO': 'O', 'cnt': 'cchBufferMax, return + 1'}), ('int', 'cchBufferMax', {})]],
+[('int', 'LoadStringA'), [('HINSTANCE', 'hInstance', {}), ('UINT', 'uID', {}), ('LPSTR', 'lpBuffer', {'IO': 'O', 'cnt': 'cchBufferMax, ret + 1'}), ('int', 'cchBufferMax', {})]],
+[('int', 'LoadStringW'), [('HINSTANCE', 'hInstance', {}), ('UINT', 'uID', {}), ('LPWSTR', 'lpBuffer', {'IO': 'O', 'cnt': 'cchBufferMax, ret + 1'}), ('int', 'cchBufferMax', {})]],
 [('BOOL', 'IsDialogMessageA'), [('HWND', 'hDlg', {}), ('LPMSG', 'lpMsg', {})]],
 [('BOOL', 'IsDialogMessageW'), [('HWND', 'hDlg', {}), ('LPMSG', 'lpMsg', {})]],
 [('BOOL', 'MapDialogRect'), [('HWND', 'hDlg', {}), ('LPRECT', 'lpRect', {'IO': 'IO'})]],
@@ -1057,7 +1075,7 @@ API_DEFS = [
 [('BOOL', 'SoundSentry'), []],
 [('VOID', 'SetDebugErrorLevel'), [('DWORD', 'dwLevel', {})]],
 [('VOID', 'SetLastErrorEx'), [('DWORD', 'dwErrCode', {}), ('DWORD', 'dwType', {})]],
-[('int', 'InternalGetWindowText'), [('HWND', 'hWnd', {}), ('LPWSTR', 'pString', {'IO': 'O', 'cnt': 'cchMaxCount, return + 1'}), ('int', 'cchMaxCount', {})]],
+[('int', 'InternalGetWindowText'), [('HWND', 'hWnd', {}), ('LPWSTR', 'pString', {'IO': 'O', 'cnt': 'cchMaxCount, ret + 1'}), ('int', 'cchMaxCount', {})]],
 [('BOOL', 'EndTask'), [('HWND', 'hWnd', {}), ('BOOL', 'fShutDown', {}), ('BOOL', 'fForce', {})]],
 [('BOOL', 'CancelShutdown'), []],
 [('HMONITOR', 'MonitorFromPoint'), [('POINT', 'pt', {}), ('DWORD', 'dwFlags', {})]],
@@ -1074,8 +1092,8 @@ API_DEFS = [
 [('BOOL', 'BlockInput'), [('BOOL', 'fBlockIt', {})]],
 [('BOOL', 'SetProcessDPIAware'), []],
 [('BOOL', 'IsProcessDPIAware'), []],
-[('UINT', 'GetWindowModuleFileNameA'), [('HWND', 'hwnd', {}), ('LPSTR', 'pszFileName', {'IO': 'O', 'cnt': 'cchFileNameMax, return'}), ('UINT', 'cchFileNameMax', {})]],
-[('UINT', 'GetWindowModuleFileNameW'), [('HWND', 'hwnd', {}), ('LPWSTR', 'pszFileName', {'IO': 'O', 'cnt': 'cchFileNameMax, return'}), ('UINT', 'cchFileNameMax', {})]],
+[('UINT', 'GetWindowModuleFileNameA'), [('HWND', 'hwnd', {}), ('LPSTR', 'pszFileName', {'IO': 'O', 'cnt': 'cchFileNameMax, ret'}), ('UINT', 'cchFileNameMax', {})]],
+[('UINT', 'GetWindowModuleFileNameW'), [('HWND', 'hwnd', {}), ('LPWSTR', 'pszFileName', {'IO': 'O', 'cnt': 'cchFileNameMax, ret'}), ('UINT', 'cchFileNameMax', {})]],
 [('BOOL', 'GetCursorInfo'), [('PCURSORINFO', 'pci', {'IO': 'IO'})]],
 [('BOOL', 'GetWindowInfo'), [('HWND', 'hwnd', {}), ('PWINDOWINFO', 'pwi', {'IO': 'IO'})]],
 [('BOOL', 'GetTitleBarInfo'), [('HWND', 'hwnd', {}), ('PTITLEBARINFO', 'pti', {'IO': 'IO'})]],
@@ -1084,8 +1102,8 @@ API_DEFS = [
 [('BOOL', 'GetComboBoxInfo'), [('HWND', 'hwndCombo', {}), ('PCOMBOBOXINFO', 'pcbi', {'IO': 'IO'})]],
 [('HWND', 'GetAncestor'), [('HWND', 'hwnd', {}), ('UINT', 'gaFlags', {})]],
 [('HWND', 'RealChildWindowFromPoint'), [('HWND', 'hwndParent', {}), ('POINT', 'ptParentClientCoords', {})]],
-[('UINT', 'RealGetWindowClassA'), [('HWND', 'hwnd', {}), ('LPSTR', 'ptszClassName', {'IO': 'O', 'cnt': 'cchClassNameMax, return'}), ('UINT', 'cchClassNameMax', {})]],
-[('UINT', 'RealGetWindowClassW'), [('HWND', 'hwnd', {}), ('LPWSTR', 'ptszClassName', {'IO': 'O', 'cnt': 'cchClassNameMax, return'}), ('UINT', 'cchClassNameMax', {})]],
+[('UINT', 'RealGetWindowClassA'), [('HWND', 'hwnd', {}), ('LPSTR', 'ptszClassName', {'IO': 'O', 'cnt': 'cchClassNameMax, ret'}), ('UINT', 'cchClassNameMax', {})]],
+[('UINT', 'RealGetWindowClassW'), [('HWND', 'hwnd', {}), ('LPWSTR', 'ptszClassName', {'IO': 'O', 'cnt': 'cchClassNameMax, ret'}), ('UINT', 'cchClassNameMax', {})]],
 [('BOOL', 'GetAltTabInfoA'), [('HWND', 'hwnd', {}), ('int', 'iItem', {}), ('PALTTABINFO', 'pati', {'IO': 'IO'}), ('LPSTR', 'pszItemText', {'IO': 'O', 'cnt': 'cchItemText'}), ('UINT', 'cchItemText', {})]],
 [('BOOL', 'GetAltTabInfoW'), [('HWND', 'hwnd', {}), ('int', 'iItem', {}), ('PALTTABINFO', 'pati', {'IO': 'IO'}), ('LPWSTR', 'pszItemText', {'IO': 'O', 'cnt': 'cchItemText'}), ('UINT', 'cchItemText', {})]],
 [('DWORD', 'GetListBoxInfo'), [('HWND', 'hwnd', {})]],
