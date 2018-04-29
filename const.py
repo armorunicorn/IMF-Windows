@@ -222,9 +222,18 @@ __attribute__((used)) static const interpose_t interposers[]
     %s
   };
 '''
-HOOK_ORI_PROC_TEMPLATE = '%s (WINAPI *p%s) (%s) = %s;\n'
-HOOK_ATTACH_TEMPLATE = '\t\tDetourAttach(&(PVOID&)p%s, %s);\n'
-HOOK_DETACH_TEMPLATE = '\t\tDetourDetach(&(PVOID&)p%s, %s);\n'
+HOOK_PROC_VAL_TEMPLATE = '''
+typedef %s (WINAPI *%s_fun) (%s);
+%s_fun p%s = %s;
+HOOK_TRACE_INFO hHook%s = { 0 };
+ULONG Hook%s_ACLEntries[1] = { 0 };
+'''
+
+HOOK_PREPARE_TEMPLATE = '\tp%s = (%s_fun)GetProcAddress(huser32, \"%s\");\n'
+HOOK_ATTACH_TEMPLATE = '''
+\tLhInstallHook(p%s, fake_%s, NULL, &hHook%s);
+\tLhSetExclusiveACL(Hook%s_ACLEntries, 1, &&hHook%s);
+'''
 HEADER = '''
 /*
 Copyright (c) 2017 HyungSeok Han and Sang Kil Cha at SoftSec, KAIST
@@ -232,45 +241,32 @@ Copyright (c) 2017 HyungSeok Han and Sang Kil Cha at SoftSec, KAIST
 See the file LICENCE for copying permission.
 */
 #include "stdafx.h"
-#include "detours.h" 
-#include <stdio.h>
-#include <locale.h>
+#include <easyhook.h>
 #include <Windows.h>
-#include <excpt.h>
 
-#pragma comment(lib, "detours.lib")
 #ifndef LOG_PATH
 #define LOG_PATH "D:\\\\log.txt"
 #endif
-
-__declspec(dllexport) VOID ExportFuncForSetDll(VOID)
-{
-	OutputDebugStringA("ExportFuncForSetDll");
-}
 
 HANDLE g_mutex;
 const char* log_path = LOG_PATH;
 '''
 
 HOOK_MAIN_TEMPLATE = '''
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved)  
-{  
-    if (dwReason == DLL_PROCESS_ATTACH)
-    {
-        g_mutex = CreateMutex(NULL, false, NULL);
-        DetourTransactionBegin();  
-        DetourUpdateThread(GetCurrentThread());  
-%s 
-        DetourTransactionCommit();  
-    }  
-    else if (dwReason == DLL_PROCESS_DETACH) {  
-        DetourTransactionBegin();  
-        DetourUpdateThread(GetCurrentThread());  
-%s 
-        DetourTransactionCommit();  
-    }  
-    return TRUE;  
-}  
+void PrepareRealApiEntry()
+{
+    HMODULE huser32 = LoadLibrary(L"User32.dll");
+%s
+}
+
+extern "C" void __declspec(dllexport) __stdcall NativeInjectionEntryPoint(REMOTE_ENTRY_INFO* inRemoteInfo);
+
+void __stdcall NativeInjectionEntryPoint(REMOTE_ENTRY_INFO* inRemoteInfo)
+{
+    PrepareRealApiEntry();
+%s
+    RhWakeUpProcess();
+}
 '''
 CODE_HEAD = '''
 /*

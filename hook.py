@@ -25,16 +25,16 @@ class ApiHook(basic.Api):
         return ret[:-1]
 
     def log(self):
-        #body = self.log_intro()
-        #body += self.log_input()
+        body = self.log_intro()
+        body += self.log_input()
         body = self.call_ori()
         body += self.log_output()
         args = self.list_args(True)
         return '%s fake_%s(%s){\n%s}\n'%(self.rtype, self.name, args, body)
 
     def log_intro(self):
-        # intro = '\tWaitForSingleObject(g_mutex, INFINITE);\n'
-        intro = '\tFILE *fp = fopen(log_path,"a");\n'
+        intro = '\tWaitForSingleObject(g_mutex, INFINITE);\n'
+        intro += '\tFILE *fp = fopen(log_path,"a");\n'
         intro += '\t_wsetlocale(0, L"chs");\n'
         return intro
 
@@ -49,29 +49,32 @@ class ApiHook(basic.Api):
     def call_ori(self):
         args = self.list_args(False)
         if self.is_void():
-            return  '\tp%s(%s);\n' % (self.name, args)
-        return '\t%s ret = p%s(%s);\n' % (self.rtype,self.name, args)
+            return '\tp%s(%s);\n' % (self.name, args)
+        return '\t%s ret = p%s(%s);\n' % (self.rtype, self.name, args)
 
     def log_output(self):
-        #ret = ArgHook(self.rval).log()
-        #for arghook in self.arghooks:
-        #    if arghook.is_output():
-        #        ret += arghook.log()
-        #ret = '''\tfprintf(fp,"OUT ['%s',");\n'''%(self.name) +ret
-        #ret += '''\tfprintf(fp,"]\\n");\n'''
+        ret = ArgHook(self.rval).log()
+        for arghook in self.arghooks:
+            if arghook.is_output():
+                ret += arghook.log()
+        ret = '''\tfprintf(fp,"OUT ['%s',");\n'''%(self.name) +ret
+        ret += '''\tfprintf(fp,"]\\n");\n'''
 
-        #ret += '\tfclose(fp);\n'
-        # ret += '\tReleaseMutex(g_mutex);\n'
-        ret = '\tOutputDebugStringA(\"%s\");\n' % self.name
+        ret += '\tfclose(fp);\n'
+        ret += '\tReleaseMutex(g_mutex);\n'
         if not self.is_void():
             ret += '\treturn ret;\n'
         return ret
 
-    def hook_entry(self):
-        return self.name, 'fake_%s' % self.name
+    def hook_prepare(self):
+        return self.name, self.name, self.name
 
-    def hook_orifun(self):
-        return self.rtype, self.name, self.list_args(True), self.name
+    def hook_attach(self):
+        return self.name, self.name, self.name, self.name, self.name
+
+    def hook_fun_val(self):
+        return self.rtype, self.name, self.list_args(True), self.name, self.name,\
+               self.name, self.name, self.name
 
 
 class ArgHook(basic.Arg):
@@ -232,11 +235,11 @@ class Hooker:
     def gen_hook(self, fn_hook):
         code = const.HEADER
         template = const.HOOK_MAIN_TEMPLATE
+        prepare = const.HOOK_PREPARE_TEMPLATE
         attach = const.HOOK_ATTACH_TEMPLATE
-        detach = const.HOOK_DETACH_TEMPLATE
-        ori_proc = const.HOOK_ORI_PROC_TEMPLATE
+        proc_val = const.HOOK_PROC_VAL_TEMPLATE
         attach_table = ''
-        detach_table = ''
+        prepare_table = ''
         for name, api in self.apis.items():
             #if name[-1] == 'A':
                 # print(name)
@@ -244,13 +247,13 @@ class Hooker:
             if name == "wvsprintfW":
                 a = 3
             h = ApiHook(api)
-            code += ori_proc % h.hook_orifun()
+            code += proc_val % h.hook_fun_val()
             code += h.log()
             code += "\n"
-            attach_table += attach % h.hook_entry()
-            detach_table += detach % h.hook_entry()
+            prepare_table += prepare % h.hook_prepare()
+            attach_table += attach % h.hook_attach()
 
-        code += template % (attach_table, detach_table)
+        code += template % (prepare_table, attach_table)
         with open(fn_hook, 'w') as f:
             f.write(code)
 
