@@ -1065,21 +1065,12 @@ LoadKeyboardLayoutW(
 #endif // !UNICODE
 
 
-#if(WINVER >= 0x0400)
 WINUSERAPI
 HKL
 WINAPI
 ActivateKeyboardLayout(
     __in HKL hkl,
     __in UINT Flags);
-#else
-WINUSERAPI
-BOOL
-WINAPI
-ActivateKeyboardLayout(
-    __in HKL hkl,
-    __in UINT Flags);
-#endif /* WINVER >= 0x0400 */
 
 #if(WINVER >= 0x0400)
 WINUSERAPI
@@ -3491,8 +3482,7 @@ WINUSERAPI
 BOOL
 WINAPI
 UnregisterDeviceNotification(
-    __in HDEVNOTIFY Handle
-    );
+    __in HDEVNOTIFY Handle);
 
 #if (_WIN32_WINNT >= 0x0502)
 
@@ -3511,15 +3501,13 @@ WINAPI
 RegisterPowerSettingNotification(
     IN HANDLE hRecipient,
     IN LPCGUID PowerSettingGuid,
-    IN DWORD Flags
-    );
+    IN DWORD Flags);
 
 WINUSERAPI
 BOOL
 WINAPI
 UnregisterPowerSettingNotification(
-    IN HPOWERNOTIFY Handle
-    );
+    IN HPOWERNOTIFY Handle);
 #endif // (_WIN32_WINNT >= 0x0502)
 #endif /* WINVER >= 0x0500 */
 
@@ -8391,16 +8379,14 @@ WINAPI
 GetClassNameA(
     __in HWND hWnd,
     __out_ecount_part(nMaxCount, return) LPSTR lpClassName,
-    __in int nMaxCount
-    );
+    __in int nMaxCount);
 WINUSERAPI
 int
 WINAPI
 GetClassNameW(
     __in HWND hWnd,
     __out_ecount_part(nMaxCount, return) LPWSTR lpClassName,
-    __in int nMaxCount
-    );
+    __in int nMaxCount);
 #ifdef UNICODE
 #define GetClassName  GetClassNameW
 #else

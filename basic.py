@@ -20,7 +20,7 @@ class Api(object):
         utils.error('Api get error: %s'%str(v))
 
     def is_void(self):
-        return 'void' == self.rtype
+        return 'void' == self.rtype or 'VOID' == self.rtype
 
 
 class Arg(object):

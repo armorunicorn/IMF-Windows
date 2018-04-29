@@ -133,7 +133,7 @@ class Extract:
 
 
 if __name__ == "__main__":
-    h_path = "/Users/apple/Desktop/WinUser.h"
+    h_path = "WinUser.h"
     e = Extract()
     e.do_extract(h_path)
     o_path = "output.txt"

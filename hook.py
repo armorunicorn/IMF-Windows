@@ -25,16 +25,16 @@ class ApiHook(basic.Api):
         return ret[:-1]
 
     def log(self):
-        body = self.log_intro()
-        body += self.log_input()
-        body += self.call_ori()
+        #body = self.log_intro()
+        #body += self.log_input()
+        body = self.call_ori()
         body += self.log_output()
         args = self.list_args(True)
         return '%s fake_%s(%s){\n%s}\n'%(self.rtype, self.name, args, body)
 
     def log_intro(self):
-        intro = '\tWaitForSingleObject(g_mutex, INFINITE);\n'
-        intro += '\tFILE *fp = fopen(log_path,"a");\n'
+        # intro = '\tWaitForSingleObject(g_mutex, INFINITE);\n'
+        intro = '\tFILE *fp = fopen(log_path,"a");\n'
         intro += '\t_wsetlocale(0, L"chs");\n'
         return intro
 
@@ -53,15 +53,16 @@ class ApiHook(basic.Api):
         return '\t%s ret = p%s(%s);\n' % (self.rtype,self.name, args)
 
     def log_output(self):
-        ret = ArgHook(self.rval).log()
-        for arghook in self.arghooks:
-            if arghook.is_output():
-                ret += arghook.log()
-        ret = '''\tfprintf(fp,"OUT ['%s',");\n'''%(self.name) +ret
-        ret += '''\tfprintf(fp,"]\\n");\n'''
+        #ret = ArgHook(self.rval).log()
+        #for arghook in self.arghooks:
+        #    if arghook.is_output():
+        #        ret += arghook.log()
+        #ret = '''\tfprintf(fp,"OUT ['%s',");\n'''%(self.name) +ret
+        #ret += '''\tfprintf(fp,"]\\n");\n'''
 
-        ret += '\tfclose(fp);\n'
-        ret += '\tReleaseMutex(g_mutex);\n'
+        #ret += '\tfclose(fp);\n'
+        # ret += '\tReleaseMutex(g_mutex);\n'
+        ret = '\tOutputDebugStringA(\"%s\");\n' % self.name
         if not self.is_void():
             ret += '\treturn ret;\n'
         return ret
@@ -237,6 +238,9 @@ class Hooker:
         attach_table = ''
         detach_table = ''
         for name, api in self.apis.items():
+            #if name[-1] == 'A':
+                # print(name)
+            #    continue
             if name == "wvsprintfW":
                 a = 3
             h = ApiHook(api)

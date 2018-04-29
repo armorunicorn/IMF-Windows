@@ -231,7 +231,7 @@ Copyright (c) 2017 HyungSeok Han and Sang Kil Cha at SoftSec, KAIST
 
 See the file LICENCE for copying permission.
 */
-
+#include "stdafx.h"
 #include "detours.h" 
 #include <stdio.h>
 #include <locale.h>
@@ -240,7 +240,7 @@ See the file LICENCE for copying permission.
 
 #pragma comment(lib, "detours.lib")
 #ifndef LOG_PATH
-#define LOG_PATH "C:\\\\log.txt"
+#define LOG_PATH "D:\\\\log.txt"
 #endif
 
 __declspec(dllexport) VOID ExportFuncForSetDll(VOID)
@@ -488,14 +488,13 @@ CODE_TAIL = '''
 }
 '''
 API_DEFS = [
-[('int', 'wvsprintfA'), [('LPSTR', 'arg0', {'IO': 'O'}), ('LPCSTR', 'arg1', {}), ('va_list', 'arglist', {})]],
-[('int', 'wvsprintfW'), [('LPWSTR', 'arg0', {'IO': 'O'}), ('LPCWSTR', 'arg1', {}), ('va_list', 'arglist', {})]],
-[('int', 'wsprintfA'), [('LPSTR', 'arg0', {'IO': 'O'}), ('LPCSTR', 'arg1', {})]],
-[('int', 'wsprintfW'), [('LPWSTR', 'arg0', {'IO': 'O'}), ('LPCWSTR', 'arg1', {})]],
+#[('int', 'wvsprintfA'), [('LPSTR', 'arg0', {'IO': 'O'}), ('LPCSTR', 'arg1', {}), ('va_list', 'arglist', {})]],
+#[('int', 'wvsprintfW'), [('LPWSTR', 'arg0', {'IO': 'O'}), ('LPCWSTR', 'arg1', {}), ('va_list', 'arglist', {})]],
+#[('int', 'wsprintfA'), [('LPSTR', 'arg0', {'IO': 'O'}), ('LPCSTR', 'arg1', {})]],
+#[('int', 'wsprintfW'), [('LPWSTR', 'arg0', {'IO': 'O'}), ('LPCWSTR', 'arg1', {})]],
 [('HKL', 'LoadKeyboardLayoutA'), [('LPCSTR', 'pwszKLID', {}), ('UINT', 'Flags', {})]],
 [('HKL', 'LoadKeyboardLayoutW'), [('LPCWSTR', 'pwszKLID', {}), ('UINT', 'Flags', {})]],
 [('HKL', 'ActivateKeyboardLayout'), [('HKL', 'hkl', {}), ('UINT', 'Flags', {})]],
-[('BOOL', 'ActivateKeyboardLayout'), [('HKL', 'hkl', {}), ('UINT', 'Flags', {})]],
 [('int', 'ToUnicodeEx'), [('UINT', 'wVirtKey', {}), ('UINT', 'wScanCode', {}), ('CONST BYTE*', 'lpKeyState', {}), ('LPWSTR', 'pwszBuff', {'IO': 'O', 'cnt': 'cchBuff'}), ('int', 'cchBuff', {}), ('UINT', 'wFlags', {}), ('HKL', 'dwhkl', {})]],
 [('BOOL', 'UnloadKeyboardLayout'), [('HKL', 'hkl', {})]],
 [('BOOL', 'GetKeyboardLayoutNameA'), [('LPSTR', 'pwszKLID', {'IO': 'O', 'cnt': 'KL_NAMELENGTH'})]],
@@ -573,9 +572,9 @@ API_DEFS = [
 [('long', 'BroadcastSystemMessage'), [('DWORD', 'flags', {}), ('LPDWORD', 'lpInfo', {'IO': 'IO'}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
 [('HDEVNOTIFY', 'RegisterDeviceNotificationA'), [('HANDLE', 'hRecipient', {}), ('LPVOID', 'NotificationFilter', {}), ('DWORD', 'Flags', {})]],
 [('HDEVNOTIFY', 'RegisterDeviceNotificationW'), [('HANDLE', 'hRecipient', {}), ('LPVOID', 'NotificationFilter', {}), ('DWORD', 'Flags', {})]],
-[('BOOL', 'UnregisterDeviceNotification'), []],
-[('HPOWERNOTIFY', 'RegisterPowerSettingNotification'), [('HANDLE', 'hRecipient', {}), ('LPCGUID', 'PowerSettingGuid', {})]],
-[('BOOL', 'UnregisterPowerSettingNotification'), []],
+[('BOOL', 'UnregisterDeviceNotification'), [('HDEVNOTIFY', 'handle', {})]],
+[('HPOWERNOTIFY', 'RegisterPowerSettingNotification'), [('HANDLE', 'hRecipient', {}), ('LPCGUID', 'PowerSettingGuid', {}), ('DWORD', 'Flags', {})]],
+[('BOOL', 'UnregisterPowerSettingNotification'), [('HPOWERNOTIFY', 'Handle', {})]],
 [('BOOL', 'PostMessageA'), [('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
 [('BOOL', 'PostMessageW'), [('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
 [('BOOL', 'PostThreadMessageA'), [('DWORD', 'idThread', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
@@ -589,8 +588,6 @@ API_DEFS = [
 [('VOID', 'PostQuitMessage'), [('int', 'nExitCode', {})]],
 [('LRESULT', 'CallWindowProcA'), [('WNDPROC', 'lpPrevWndFunc', {}), ('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
 [('LRESULT', 'CallWindowProcW'), [('WNDPROC', 'lpPrevWndFunc', {}), ('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
-[('LRESULT', 'CallWindowProcA'), [('FARPROC', 'lpPrevWndFunc', {}), ('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
-[('LRESULT', 'CallWindowProcW'), [('FARPROC', 'lpPrevWndFunc', {}), ('HWND', 'hWnd', {}), ('UINT', 'Msg', {}), ('WPARAM', 'wParam', {}), ('LPARAM', 'lParam', {})]],
 [('BOOL', 'InSendMessage'), []],
 [('DWORD', 'InSendMessageEx'), [('LPVOID', 'lpReserved', {})]],
 [('UINT', 'GetDoubleClickTime'), []],
@@ -741,7 +738,7 @@ API_DEFS = [
 [('VOID', 'keybd_event'), [('BYTE', 'bVk', {}), ('BYTE', 'bScan', {}), ('DWORD', 'dwFlags', {}), ('ULONG_PTR', 'dwExtraInfo', {})]],
 [('VOID', 'mouse_event'), [('DWORD', 'dwFlags', {}), ('DWORD', 'dx', {}), ('DWORD', 'dy', {}), ('DWORD', 'dwData', {}), ('ULONG_PTR', 'dwExtraInfo', {})]],
 [('UINT', 'SendInput'), [('UINT', 'cInputs', {}), ('LPINPUT', 'pInputs', {'cnt': 'cInputs'}), ('int', 'cbSize', {})]],
-[('BOOL', 'GetTouchInputInfo'), [('HTOUCHINPUT', 'hTouchInput', {})]],
+[('BOOL', 'GetTouchInputInfo'), [('HTOUCHINPUT', 'hTouchInput', {}), ('UINT', 'cInputs', {}), ('PTOUCHINPUT', 'pInputs', {'IO': 'O', 'cnt': 'cInputs'}), ('int', 'cbSize', {})]],
 [('BOOL', 'CloseTouchInputHandle'), [('HTOUCHINPUT', 'hTouchInput', {})]],
 [('BOOL', 'RegisterTouchWindow'), [('HWND', 'hwnd', {}), ('ULONG', 'ulFlags', {})]],
 [('BOOL', 'UnregisterTouchWindow'), [('HWND', 'hwnd', {})]],
@@ -982,8 +979,8 @@ API_DEFS = [
 [('BOOL', 'DeregisterShellHookWindow'), [('HWND', 'hwnd', {})]],
 [('BOOL', 'EnumWindows'), [('WNDENUMPROC', 'lpEnumFunc', {}), ('LPARAM', 'lParam', {})]],
 [('BOOL', 'EnumThreadWindows'), [('DWORD', 'dwThreadId', {}), ('WNDENUMPROC', 'lpfn', {}), ('LPARAM', 'lParam', {})]],
-[('int', 'GetClassNameA'), [('HWND', 'hWnd', {}), ('LPSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'})]],
-[('int', 'GetClassNameW'), [('HWND', 'hWnd', {}), ('LPWSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'})]],
+[('int', 'GetClassNameA'), [('HWND', 'hWnd', {}), ('LPSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'}), ('int', 'nMaxCount', {})]],
+[('int', 'GetClassNameW'), [('HWND', 'hWnd', {}), ('LPWSTR', 'lpClassName', {'IO': 'O', 'cnt': 'nMaxCount, ret'}), ('int', 'nMaxCount', {})]],
 [('HWND', 'GetTopWindow'), [('HWND', 'hWnd', {})]],
 [('DWORD', 'GetWindowThreadProcessId'), [('HWND', 'hWnd', {}), ('LPDWORD', 'lpdwProcessId', {'IO': 'O'})]],
 [('BOOL', 'IsGUIThread'), [('BOOL', 'bConvert', {})]],
@@ -991,8 +988,6 @@ API_DEFS = [
 [('HWND', 'GetWindow'), [('HWND', 'hWnd', {}), ('UINT', 'uCmd', {})]],
 [('HHOOK', 'SetWindowsHookA'), [('int', 'nFilterType', {}), ('HOOKPROC', 'pfnFilterProc', {})]],
 [('HHOOK', 'SetWindowsHookW'), [('int', 'nFilterType', {}), ('HOOKPROC', 'pfnFilterProc', {})]],
-[('HOOKPROC', 'SetWindowsHookA'), [('int', 'nFilterType', {}), ('HOOKPROC', 'pfnFilterProc', {})]],
-[('HOOKPROC', 'SetWindowsHookW'), [('int', 'nFilterType', {}), ('HOOKPROC', 'pfnFilterProc', {})]],
 [('BOOL', 'UnhookWindowsHook'), [('int', 'nCode', {}), ('HOOKPROC', 'pfnFilterProc', {})]],
 [('HHOOK', 'SetWindowsHookExA'), [('int', 'idHook', {}), ('HOOKPROC', 'lpfn', {}), ('HINSTANCE', 'hmod', {}), ('DWORD', 'dwThreadId', {})]],
 [('HHOOK', 'SetWindowsHookExW'), [('int', 'idHook', {}), ('HOOKPROC', 'lpfn', {}), ('HINSTANCE', 'hmod', {}), ('DWORD', 'dwThreadId', {})]],
@@ -1007,7 +1002,6 @@ API_DEFS = [
 [('HCURSOR', 'LoadCursorFromFileW'), [('LPCWSTR', 'lpFileName', {})]],
 [('HCURSOR', 'CreateCursor'), [('HINSTANCE', 'hInst', {}), ('int', 'xHotSpot', {}), ('int', 'yHotSpot', {}), ('int', 'nWidth', {}), ('int', 'nHeight', {}), ('CONST VOID*', 'pvANDPlane', {}), ('CONST VOID*', 'pvXORPlane', {})]],
 [('BOOL', 'DestroyCursor'), [('HCURSOR', 'hCursor', {})]],
-[('HCURSOR', 'CopyCursor'), [('HCURSOR', 'hCursor', {})]],
 [('BOOL', 'SetSystemCursor'), [('HCURSOR', 'hcur', {}), ('DWORD', 'id', {})]],
 [('HICON', 'LoadIconA'), [('HINSTANCE', 'hInstance', {}), ('LPCSTR', 'lpIconName', {})]],
 [('HICON', 'LoadIconW'), [('HINSTANCE', 'hInstance', {}), ('LPCWSTR', 'lpIconName', {})]],
@@ -1076,7 +1070,6 @@ API_DEFS = [
 [('VOID', 'SetDebugErrorLevel'), [('DWORD', 'dwLevel', {})]],
 [('VOID', 'SetLastErrorEx'), [('DWORD', 'dwErrCode', {}), ('DWORD', 'dwType', {})]],
 [('int', 'InternalGetWindowText'), [('HWND', 'hWnd', {}), ('LPWSTR', 'pString', {'IO': 'O', 'cnt': 'cchMaxCount, ret + 1'}), ('int', 'cchMaxCount', {})]],
-[('BOOL', 'EndTask'), [('HWND', 'hWnd', {}), ('BOOL', 'fShutDown', {}), ('BOOL', 'fForce', {})]],
 [('BOOL', 'CancelShutdown'), []],
 [('HMONITOR', 'MonitorFromPoint'), [('POINT', 'pt', {}), ('DWORD', 'dwFlags', {})]],
 [('HMONITOR', 'MonitorFromRect'), [('LPCRECT', 'lprc', {}), ('DWORD', 'dwFlags', {})]],
